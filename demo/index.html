@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+  <head>
+    <title>bloombox-plant demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+    <link rel="import" href="../bloombox-plant.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+      .vertical-section-container.centered {
+        max-width: 700px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="vertical-section-container centered">
+      <h3>Zerostate Example</h3>
+      <demo-snippet>
+        <template>
+          <bloombox-plant zerostate></bloombox-plant>
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Data Example (normal display mode)</h3>
+      <demo-snippet>
+        <template>
+          <bloombox-plant
+            key="sample1"
+            environment="sandbox"
+            display-mode="normal"
+            type="Clone"
+            brand="Kiva"
+            name="Chocolate Chip Cookie"
+            photos='["test.jpg"]'
+            description="Delicious chocolate chip cookie"
+            pricing='{"unit": {"available": true, "value": 5}}'
+            sale="20"
+            visible="true"
+            premium="true"
+            partner="mm"></bloombox-plant>
+        </template>
+      </demo-snippet>
+    </div>
+  </body>
+</html>

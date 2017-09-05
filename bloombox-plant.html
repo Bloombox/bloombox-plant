@@ -1,0 +1,432 @@
+
+<!--
+`<bloombox-plant>` provides UI for creating and managing plant products.
+
+@group Bloombox Elements
+@element bloombox-plant
+@demo demo/index.html
+@homepage bloombox.github.io
+-->
+
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-label/iron-label.html">
+
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+
+<link rel="import" href="../bloombox-media/bloombox-media.html">
+<link rel="import" href="../bloombox-styles/bloombox-styles.html">
+<link rel="import" href="../bloombox-testing/bloombox-testing.html">
+<link rel="import" href="../bloombox-product/bloombox-product.html">
+<link rel="import" href="../bloombox-pricelist/bloombox-price.html">
+<link rel="import" href="../bloombox-pricelist/bloombox-pricelist.html">
+
+<dom-module id="bloombox-plant">
+  <template strip-whitespace>
+    <style is="custom-style" include="bloombox-styles">
+      :root {
+        --paper-icon-button-ink-color: green;
+      }
+
+      :host {
+        display: block;
+        width: 100%;
+      }
+
+      .product-card .card-actions {
+        position: fixed;
+        right: 60px;
+        display: flex;
+        flex-direction: column;
+        top: 220px;
+      }
+
+      .product-card .card-actions paper-icon-button {
+        margin-bottom: 10px;
+        color: #333;
+        --paper-icon-button: {
+          background-color: #ddd;
+          border-radius: 24px;
+        };
+      }
+
+      .product-card .card-actions paper-icon-button iron-icon {
+        color: #333;
+      }
+    </style>
+
+    <template is="dom-if" if="[[!zerostate]]" strip-whitespace>
+      <div class="product-card plant-card">
+        <div class="card-content">
+          <div class="name-row">
+            <h2>[[brand]]: [[name]]</h2>
+
+            <!-- Stock Flags -->
+            <div class="stock-flags plant-info test-info row">
+              <div class="base-flags">
+                <!-- Sale -->
+                <iron-label class="sale-label" hidden$="[[!sale]]"><span>[[sale]]% OFF</span></iron-label>
+
+                <!-- Buy-One-Get-One -->
+                <iron-label class="bogo-label" hidden$="[[!bogo]]"><span>Buy One Get One</span></iron-label>
+
+                <!-- Last Chance -->
+                <iron-label class="lastchance-label" hidden$="[[!lastchance]]"><span>Last Chance</span></iron-label>
+
+                <!-- Type Label -->
+                <iron-label class="type-label"><span>[[type]]</span></iron-label>
+
+                <!-- Species -->
+                <template is="dom-if" if="[[species]]" strip-whitespace restamp>
+                  <template is="dom-if" if="[[!_partnerIsAbatin]]">
+                    <iron-label class="species-label"><span>[[_renderSpeciesLabel(species)]]</span></iron-label>
+                  </template>
+                </template>
+              </div>
+
+           </div><!-- end div.row.stock-flags -->
+          </div><!-- end div.name-row -->
+
+          <!-- Description -->
+          <div class="row description-container">
+            <div class$="[[_descriptionClass]]">[[_descriptionText]]</div>
+          </div><!-- end div.row.description-container -->
+
+          <!-- Product Media -->
+          <div class="product-media plant-media row">
+            <div class="bloombox-media-wrap">
+              <bloombox-media
+                disabled
+                partner="[[partner]]"
+                environment="[[environment]]"
+                asset="[[_image]]"></bloombox-media>
+            </div><!-- end div.bloombox-media-wrap -->
+          </div><!-- end .row.plant-media -->
+
+          <!-- Price List -->
+          <div class="row pricelist">
+            <bloombox-price
+              class="plantSealedPrice"
+              price="{{pricing.unit.value}}"
+              available="{{pricing.unit.available}}"
+              currency="$"></bloombox-pricelist>
+          </div><!-- end div.row.pricelist -->
+          <template is="dom-if" if="[[!visible]]" strip-whitespace>
+            <div class="not-in-stock-overlay not-in-stock"></div><!-- end div.not-in-stock-overlay -->
+          </template>
+        </div><!-- end div.card-content -->
+        <div class="card-actions">
+          <paper-icon-button id="editButton" on-tap="edit" icon="create"></paper-icon-button>
+          <paper-tooltip for="editButton" position="left">Edit Plant</paper-tooltip>
+
+          <paper-icon-button id="deleteButton" on-tap="delete" icon="delete"></paper-icon-button>
+          <paper-tooltip for="deleteButton" position="left">Delete Plant</paper-tooltip>
+
+          <paper-icon-button id="markAsInStockButton" on-tap="markAsInStock" icon="check" hidden$="[[visible]]"></paper-icon-button>
+          <paper-tooltip for="markAsInStockButton" position="left">Mark as In-Stock</paper-tooltip>
+
+          <paper-icon-button id="markAsOutOfStockButton" on-tap="markAsOutOfStock" icon="block" hidden$="[[!visible]]"></paper-icon-button>
+          <paper-tooltip for="markAsOutOfStockButton" position="left">Mark as Out-of-Stock</paper-tooltip>
+        </div><!-- end div.card-actions -->
+      </div><!-- end div.product-card.data-content.plant-product -->
+    </template>
+
+    <!-- - - - - - - - - - - -->
+    <!-- Zero-State  Content -->
+    <!-- - - - - - - - - - - -->
+    <template is="dom-if" if="[[zerostate]]" strip-whitespace restamp>
+      <div class="product-card plant-card zerostate">
+        <div class="card-content">
+          <div class="basic-info row">
+            <!-- Name & Description -->
+            <paper-input id="brandField" placeholder="Brand Name" autofocus tabindex="0" value="[[brand]]" required auto-validate error-message="Please provide a brand!" no-label-float name="brand" class="form-item edible-brand"></paper-input>
+            <paper-input id="nameField" value="[[name]]" required tabindex="1" auto-validate error-message="Please provide a name!" label="Name" name="name" class="form-item edible-name"></paper-input>
+            <paper-textarea id="descriptionField" label="Description" tabindex="2" value="[[description]]" name="description" class="form-item strain-description"></paper-textarea>
+            <paper-dropdown-menu id="typeField" label="Edible Type" tabindex="3" class="form-item" noink no-label-float auto-validate required name="type">
+              <paper-listbox class="dropdown-content" selected="[[type]]" attr-for-selected="key">
+                <paper-item key="Clone">Clone</paper-item>
+                <paper-item key="Seed">Seed</paper-item>
+                <paper-item key="Other" class="unspecified-item-value">Other</paper-item>
+              </paper-listbox>
+            </paper-dropdown-menu><!-- end paper-dropdown-menu#typeField -->
+
+            <!-- Species -->
+            <paper-dropdown-menu id="speciesField" label="Species" class="form-item" noink auto-validate name="species" hidden$="[[_partnerIsAbatin]]" required$="[[!_partnerIsAbatin]]">
+              <paper-listbox class="dropdown-content" selected="[[species]]" attr-for-selected="key">
+                <paper-item key="Indica">Indica</paper-item>
+                <paper-item key="Hybrid (Indica Dominant)">Hybrid (Indica Dominant)</paper-item>
+                <paper-item key="Hybrid (No Dominance)">Hybrid (No Dominance)</paper-item>
+                <paper-item key="Hybrid (Sativa Dominant)">Hybrid (Sativa Dominant)</paper-item>
+                <paper-item key="Sativa">Sativa</paper-item>
+                <paper-item key="Unspecified" class="unspecified-item-value">Unspecified</paper-item>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </div><!-- end .row.basic-info -->
+
+          <!-- Pricing/Sale Flags -->
+          <div class="stock-flags row">
+            <div class="row-label">
+              <span class="row-label-value">Inventory</span>
+            </div><!-- end div.row-label -->
+
+            <div class="premium-toggle-option">
+              <paper-checkbox id="premiumToggle" checked="{{premium}}" tabindex="4" class="form-item premium-toggle" noink>[[_renderPremiumLabel(partner)]]</paper-checkbox>
+            </div><!-- end .premium-toggle-option -->
+
+            <div class="bogo-toggle-option">
+              <paper-checkbox id="bogoToggle" checked="{{bogo}}" tabindex="9" class="form-item item-bogo-toggle" noink>Buy One, Get One</paper-checkbox>
+            </div><!-- end .bogo-toggle-option -->
+
+            <div class="lastchance-toggle-option">
+              <paper-checkbox id="lastchanceToggle" checked="{{lastchance}}" class="form-item item-lastchance-toggle" noink>Last Chance</paper-checkbox>
+            </div><!-- end .lastchance-toggle-option -->
+
+            <div class="sale-toggle-option">
+              <div class="sale-toggle-container">
+                <paper-checkbox id="saleToggle" checked="[[_isOnSale]]" tabindex="10" on-tap="_toggleSale" class="form-item sale-toggle" noink>On Sale</paper-checkbox>
+              </div><!-- end .sale-toggle-container -->
+              <template is="dom-if" if="{{sale}}" restamp strip-whitespace>
+                <div class="sale-amount-container">
+                  <paper-slider id="saleValue" pin max="95" min="5" tabindex="11" editable step="5" class="form-item"></paper-slider>
+                </div><!-- end .sale-amount-container -->
+                <div class="sale-percentage-label">% off</div>
+              </template>
+            </div><!-- end .sale-toggle-option -->
+          </div><!-- end .row.stock-flags -->
+
+
+          <!-- Product Media -->
+          <div class="plant-media row">
+            <div class="bloombox-media-wrap">
+              <bloombox-media
+                editable
+                partner="[[partner]]"
+                environment="[[environment]]"
+                asset$="[[_image]]"
+                on-asset-ready="handleAssetAttach"
+                on-asset-clear="handleAssetClear"></bloombox-media>
+            </div><!-- end div.bloombox-media-wrap -->
+          </div><!-- end .row.plant-media -->
+
+          <!-- Price List -->
+          <div class="row pricelist">
+            <bloombox-price
+              id="editablePrice"
+              editable
+              price="{{pricing.unit.value}}"
+              available="{{pricing.unit.available}}"
+              currency="$"></bloombox-price>
+          </div><!-- end div.row.pricelist -->
+        </div><!-- end div.card-content -->
+
+        <!-- Actions -->
+        <template is="dom-if" if="[[editing]]" strip-whitespace>
+          <div class="zerostate-actions edible-zerostate-actions card-actions row">
+            <paper-icon-button
+              id="saveButton"
+              icon="save"
+              on-tap="commitEdits"></paper-icon-button>
+            <paper-tooltip for="saveButton" position="left">Save</paper-tooltip>
+            <paper-icon-button
+              id="cancelButton"
+              icon="cancel"
+              on-tap="cancelEdits"></paper-icon-button>
+            <paper-tooltip for="cancelButton" position="left">Cancel Edits</paper-tooltip>
+          </div><!-- end .edible-zerostate-actions.card-actions -->
+        </template>
+      </div><!-- end paper-card.product-card.zerostate.plant-product -->
+    </template>
+  </template>
+
+  <script>
+    Polymer.BloomboxPlant = Polymer({
+      is: 'bloombox-plant',
+      behaviors: [Polymer.BloomboxBaseProductCardBehavior],
+
+      /**
+       * Persistence schema and storage collection for this item.
+       */
+      _schema: 'plants',
+
+      properties: {
+        /**
+         * Computes whether the current partner is `abatin`.
+         */
+        _partnerIsAbatin: {
+          type: Boolean,
+          notify: true,
+          computed: "_computePartnerIsAbatin(partner)"
+        },
+
+        /**
+         * String value of the `type` of this current item. This property varies by item type.
+         * In `<bloombox-plant>`'s case, the following values are selectable:
+         * - `Clone`
+         * - `Seed`
+         * - `Other`
+         */
+        type: {
+          type: String,
+          notify: true,
+          reflectToAttribute: true
+        },
+
+        /**
+         * Object specifying product pricing. This is specified in either weighted pricing (i.e.
+         * pricing per-gram or per-ounce), which is generally used for raw product, namely
+         * flowers and concentrates.
+         */
+        pricing: {
+          type: Object,
+          notify: true,
+          reflectToAttribute: true,
+          value: function() {
+            return {"unit": {"available": true, "value": 0}};
+          }
+        },
+
+       /**
+       * Backs the property `_partnerIsAbatin`.
+       */
+      _computePartnerIsAbatin: function(partner) {
+        return partner == "abatin";
+      },
+
+      /**
+       * Read underlying object data, suitable for writing into underlying persistence
+       * or comparing with edits.
+       */
+      readObjectData: function() {
+        var payload = {};
+
+        // handle required fields
+        payload.name = this.get("name");
+        payload.brand = this.get("brand");
+        payload.type = this.get("type");
+        payload.species = this.get("species") || null;
+        payload.photos = this.get("photos") || [];
+        payload.pricing = this.get("pricing");
+
+        // handle optional fields
+        if (this.get("premium") == true) {
+          payload.flags = payload.flags || {};
+          payload.flags.premium = true;
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.premium = false;
+        }
+        if (this.get("sale") !== undefined && this.get("sale") != null) {
+          payload.flags = payload.flags || {};
+          payload.flags.sale = this.get("sale");
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.sale = null;
+        }
+        if (this.get("visible") != null && this.get("visible") != undefined) {
+          payload.flags = payload.flags || {};
+          payload.flags.visible = this.get("visible");
+        }
+        if (this.get("bogo") != null && this.get("bogo") != undefined) {
+          payload.flags = payload.flags || {};
+          payload.flags.bogo = this.get("bogo");
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.bogo = false;
+        }
+        if (this.get("lastchance") != null && this.get("lastchance") != undefined) {
+          payload.flags = payload.flags || {};
+          payload.flags.lastchance = this.get("lastchance");
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.lastchance = false;
+        }
+        if (this.get("description") !== undefined && this.get("description") !== null &&
+            this.get("description").length > 0) {
+          payload.description = this.get("description");
+        } else {
+          payload.description = null;  // clear any current description
+        }
+        return payload;
+      },
+
+      /**
+       * Read underlying object data direct from the current zero-state form.
+       */
+      readZeroStateForm: function() {
+        var payload = {},
+            priceValue = this.$$("#editablePrice")._priceValue,
+            priceAvailable = this.$$("#editablePrice").available,
+            pricelist = {},
+            mi, mpayload, testing;
+
+        // handle required fields
+        payload.name = this._trim(this.$$("#nameField").value);
+        payload.brand = this._trim(this.$$("#brandField").value);
+        payload.type = this.$$("#typeField").value;
+        payload.species = this.$$("#speciesField").value || null;
+        
+        if (this.get("photos") && this.get("photos").length > 0)
+          payload.photos = this.get("photos");
+        else
+          payload.photos = [];
+
+        payload.pricing = {
+          unit: {
+            available: priceAvailable,
+            value: priceValue
+          }
+        }
+
+        // handle optional fields
+        if (this.$$("#premiumToggle").checked) {
+          payload.flags = payload.flags || {};
+          payload.flags.premium = true;
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.premium = false;
+        }
+        if (this.$$("#bogoToggle").checked) {
+          payload.flags = payload.flags || {};
+          payload.flags.bogo = true;
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.bogo = false;
+        }
+         if (this.$$("#lastchanceToggle").checked) {
+          payload.flags = payload.flags || {};
+          payload.flags.lastchance = true;
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.lastchance = false;
+        }
+        if (this.$$("#saleToggle").checked) {
+          payload.flags = payload.flags || {};
+          payload.flags.sale = this.$$("#saleValue").value;
+        } else {
+          payload.flags = payload.flags || {};
+          payload.flags.sale = null;
+        }
+        if (this.$$("#descriptionField") && this.$$("#descriptionField").value !== undefined && this.$$("#descriptionField").value.length > 0) {
+          payload.description = this._trim(this.$$("#descriptionField").value);
+        } else {
+          payload.description = null;  // clear any current description
+        }
+        return payload;
+      }
+    });
+  </script>
+</dom-module>
