@@ -1,7 +1,7 @@
 {
   "name": "bloombox-plant",
   "description": "Provides UI for creating and managing plant products",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "authors": [
     "Tyler Porras <tyler@momentum.io>"
